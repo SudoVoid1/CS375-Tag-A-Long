@@ -1,7 +1,7 @@
 {
   "scripts": {
     "start": "cd app && node server.js",
-    "db:create": "createdb -U postgres Tag-A-Long",
+    "db:create": "psql -U postgres -d postgres -f create.sql",
     "db:schema": "psql -U postgres -d Tag-A-Long -f schema.sql",
     "db:seed": "psql -U postgres -d Tag-A-Long -f seed.sql",
     "setup": "npm run db:create && npm run db:schema && npm run db:seed"

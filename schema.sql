@@ -1,3 +1,7 @@
+DROP TABLE IF EXISTS tripMembers CASCADE;
+DROP TABLE IF EXISTS trips CASCADE;
+DROP TABLE IF EXISTS locations CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
 CREATE TABLE users (
     userId BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
@@ -27,11 +31,11 @@ CREATE TABLE trips (
     tripName VARCHAR(255) NOT NULL,
     startLocationId BIGINT NOT NULL REFERENCES locations(locationId),
     endLocationId BIGINT NOT NULL REFERENCES locations(locationId),
-    startDateTime DATETIME,
-    endDateTime DATETIME,
+    startDateTime TIMESTAMP,
+    endDateTime TIMESTAMP,
     createdByUser BIGINT NOT NULL REFERENCES users(userId),
     createdAt TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT validDate CHECK (endDate >= startDate)
+    CONSTRAINT validDate CHECK (endDateTime >= startDateTime)
 );
 CREATE TABLE tripMembers (
     tripId BIGINT NOT NULL REFERENCES trips(tripId) ON DELETE CASCADE,
