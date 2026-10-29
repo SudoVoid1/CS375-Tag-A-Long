@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS activities CASCADE;
 DROP TABLE IF EXISTS tripMembers CASCADE;
 DROP TABLE IF EXISTS trips CASCADE;
 DROP TABLE IF EXISTS locations CASCADE;
@@ -33,8 +34,8 @@ CREATE TABLE trips (
     endLocationId BIGINT NOT NULL REFERENCES locations(locationId),
     startDateTime TIMESTAMP,
     endDateTime TIMESTAMP,
-    createdByUser BIGINT NOT NULL REFERENCES users(userId),
     createdAt TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (tripId, createdByUser) REFERENCES tripMembers(tripId, userId),
     CONSTRAINT validDate CHECK (endDateTime >= startDateTime)
 );
 CREATE TABLE tripMembers (
@@ -44,4 +45,19 @@ CREATE TABLE tripMembers (
     joinedOn TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (tripId, userId),
     CONSTRAINT nonNegativeBudget CHECK (budget >= 0)
+);
+CREATE TABLE activities (
+    activityId BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tripId BIGINT NOT NULL REFERENCES trips(tripId) ON DELETE CASCADE,
+    locationId BIGINT REFERENCES locations(locationId),
+    activityName VARCHAR(255) NOT NULL,
+    category VARCHAR(30),
+    activityDate DATE,
+    startTime TIME,
+    durationMinutes INT NOT NULL DEFAULT 30,
+    cost NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    createdByUser BIGINT NOT NULL REFERENCES users(userId),
+    createdAt TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT nonNegativeCost CHECK (cost >= 0),
+    CONSTRAINT positiveDuration CHECK (durationMinutes > 0)
 );
