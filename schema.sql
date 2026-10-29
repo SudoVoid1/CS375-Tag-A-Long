@@ -5,11 +5,10 @@ DROP TABLE IF EXISTS locations CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 CREATE TABLE users (
     userId BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    email VARCHAR(255) NOT NULL,
-    username VARCHAR(50) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    username VARCHAR(50) NOT NULL UNIQUE,
     passwordHash TEXT NOT NULL,
-    createdOn TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (email, username)
+    createdOn TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE TABLE locations (
     locationId BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -30,34 +29,41 @@ CREATE TABLE locations (
 CREATE TABLE trips (
     tripId BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tripName VARCHAR(255) NOT NULL,
-    startLocationId BIGINT NOT NULL REFERENCES locations(locationId),
-    endLocationId BIGINT NOT NULL REFERENCES locations(locationId),
+    startLocationId BIGINT NOT NULL,
+    endLocationId BIGINT NOT NULL,
     startDateTime TIMESTAMP,
     endDateTime TIMESTAMP,
+    createdByUser BIGINT NOT NULL,
     createdAt TIMESTAMPTZ NOT NULL DEFAULT now(),
-    FOREIGN KEY (tripId, createdByUser) REFERENCES tripMembers(tripId, userId),
+    FOREIGN KEY (startLocationId) REFERENCES locations(locationId),
+    FOREIGN KEY (endLocationId) REFERENCES locations(locationId),
+    FOREIGN KEY (createdByUser) REFERENCES users(userId),
     CONSTRAINT validDate CHECK (endDateTime >= startDateTime)
 );
 CREATE TABLE tripMembers (
-    tripId BIGINT NOT NULL REFERENCES trips(tripId) ON DELETE CASCADE,
-    userId BIGINT NOT NULL REFERENCES users(userId) ON DELETE CASCADE,
+    tripId BIGINT NOT NULL,
+    userId BIGINT NOT NULL,
     budget NUMERIC(10, 2),
     joinedOn TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (tripId, userId),
+    FOREIGN KEY (tripId) REFERENCES trips(tripId) ON DELETE CASCADE,
+    FOREIGN KEY (userId) REFERENCES users(userId) ON DELETE CASCADE,
     CONSTRAINT nonNegativeBudget CHECK (budget >= 0)
 );
 CREATE TABLE activities (
     activityId BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    tripId BIGINT NOT NULL REFERENCES trips(tripId) ON DELETE CASCADE,
-    locationId BIGINT REFERENCES locations(locationId),
+    tripId BIGINT NOT NULL,
+    createdByUser BIGINT NOT NULL,
+    locationId BIGINT,
     activityName VARCHAR(255) NOT NULL,
     category VARCHAR(30),
     activityDate DATE,
     startTime TIME,
     durationMinutes INT NOT NULL DEFAULT 30,
     cost NUMERIC(10, 2) NOT NULL DEFAULT 0,
-    createdByUser BIGINT NOT NULL REFERENCES users(userId),
     createdAt TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (tripId, createdByUser) REFERENCES tripMembers(tripId, userId) ON DELETE CASCADE,
+    FOREIGN KEY (locationId) REFERENCES locations(locationId) ON DELETE SET NULL,
     CONSTRAINT nonNegativeCost CHECK (cost >= 0),
     CONSTRAINT positiveDuration CHECK (durationMinutes > 0)
 );
