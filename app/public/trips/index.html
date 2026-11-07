@@ -8,22 +8,42 @@
   <body>
     <h1>My Trips</h1>
 
-    <div id="trips-container"></div>
+    <table id="trips-table">
+      <tr>
+        <th>Name</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Start</th>
+        <th>End</th>
+      </tr>
+    </table>
 
     <script>
-      const response = await fetch("/api/trips?userId=1");
-      const trips = await response.json();
+      const tripsTable = document.getElementById("trips-table");
 
-      const container = document.getElementById("trips-container");
+      fetch("/api/trips?userId=1")
+        .then((response) => response.json())
+        .then((trips) => {
+          trips.forEach((trip) => {
+            let row = document.createElement("tr");
 
-      trips.forEach((trip) => {
-        const link = document.createElement("a");
+            ["tripname", "startlocation", "endlocation", "startdatetime", "enddatetime"].forEach((field) => {
+              let cell = document.createElement("td");
+              if (field === "tripname") {
+                let link = document.createElement("a");
+                link.href = `/trips/${trip.tripid}`;
+                link.textContent = trip.tripname;
+                cell.appendChild(link);
+              } else {
+                cell.textContent = trip[field];
+              }
+              row.appendChild(cell);
+            });
 
-        link.href = `/trips/${trip.tripid}`;
-        link.textContent = trip.tripname;
-
-        container.appendChild(link);
-      });
+            tripsTable.appendChild(row);
+          });
+        })
+        .catch((error) => console.log(error));
     </script>
   </body>
 </html>

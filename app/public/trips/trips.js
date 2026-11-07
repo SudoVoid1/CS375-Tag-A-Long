@@ -4,7 +4,7 @@ const tripTable = document.getElementById("trip-table");
 function setTable(trip) {
   let row = document.createElement("tr");
 
-  ["tripname", "startdatetime", "enddatetime"].forEach((field) => {
+  ["tripname", "startlocation", "endlocation", "startdatetime", "enddatetime"].forEach((field) => {
     let cell = document.createElement("td");
     cell.textContent = trip[field];
     row.appendChild(cell);

@@ -22,8 +22,16 @@ app.get("/api/trips", (req, res) => {
     //   req.query.userId,
     // ])
     // Use the get all for now.
-    .query(`SELECT * FROM trips NATURAL JOIN tripMembers`)
-    .then((result) => res.json(result.rows))
+    .query(
+      `SELECT trips.*, s.locationName AS startLocation, e.locationName AS endLocation
+       FROM trips
+       JOIN locations s ON s.locationId = trips.startLocationId
+       JOIN locations e ON e.locationId = trips.endLocationId`,
+    )
+    .then((result) => {
+      console.log(result.rows);
+      res.json(result.rows);
+    })
     .catch((error) => {
       console.log(error);
       res.status(500).send();
@@ -33,8 +41,18 @@ app.get("/api/trips", (req, res) => {
 // API: Get a specific trip
 app.get("/api/trips/:tripId", (req, res) => {
   pool
-    .query(`SELECT * FROM trips WHERE tripId = $1`, [req.params.tripId])
-    .then((result) => res.json(result.rows[0]))
+    .query(
+      `SELECT trips.*, s.locationName AS startLocation, e.locationName AS endLocation
+       FROM trips
+       JOIN locations s ON s.locationId = trips.startLocationId
+       JOIN locations e ON e.locationId = trips.endLocationId
+       WHERE tripId = $1`,
+      [req.params.tripId],
+    )
+    .then((result) => {
+      console.log(result.rows[0]);
+      res.json(result.rows[0]);
+    })
     .catch((error) => {
       console.log(error);
       res.status(500).send();
