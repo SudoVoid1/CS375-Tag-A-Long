@@ -1,25 +1,49 @@
 require("dotenv").config();
+const pg = require("pg");
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const env = require("../env.json");
+const Pool = pg.Pool;
+const pool = new Pool(env);
+pool.connect().then(function () {
+  console.log(`Connected to database ${env.database}`);
+});
+
 app.use(express.json());
 app.use(express.static("public"));
+app.use(express.static("trips"));
 
-app.get("/trip", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/trip/index.html"));
+// API: Get the trips a user is a member of, e.g. /api/trips?userId=1
+app.get("/api/trips", (req, res) => {
+  pool
+    // .query(`SELECT * FROM trips NATURAL JOIN tripMembers WHERE userId = $1 `, [
+    //   req.query.userId,
+    // ])
+    // Use the get all for now.
+    .query(`SELECT * FROM trips NATURAL JOIN tripMembers`)
+    .then((result) => res.json(result.rows))
+    .catch((error) => {
+      console.log(error);
+      res.status(500).send();
+    });
 });
 
-app.get("/itinerary", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/trip/itinerary.html"));
+// API: Get a specific trip
+app.get("/api/trips/:tripId", (req, res) => {
+  pool
+    .query(`SELECT * FROM trips WHERE tripId = $1`, [req.params.tripId])
+    .then((result) => res.json(result.rows[0]))
+    .catch((error) => {
+      console.log(error);
+      res.status(500).send();
+    });
 });
 
-app.get("/budget", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/trip/budget.html"));
-});
-
-app.get("/budget", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/trip/notes.html"));
+// Routing: send the user to trip.html page.
+app.get("/trips/:tripId", (req, res) => {
+  res.sendFile(__dirname + "/public/trips/trip.html");
 });
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
