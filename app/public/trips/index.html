@@ -18,8 +18,44 @@
       </tr>
     </table>
 
+    <div>
+      Name <input id="name" /> From (location id) <input id="start-location" type="number" /> To
+      (location id) <input id="end-location" type="number" /> Start
+      <input id="start-date" type="datetime-local" /> End
+      <input id="end-date" type="datetime-local" />
+      <button id="submit-button">Add a trip</button>
+    </div>
+
     <script>
       const tripsTable = document.getElementById("trips-table");
+
+      function addTrip() {
+        const trip = {
+          tripName: document.getElementById("name").value,
+          startLocationId: document.getElementById("start-location").value,
+          endLocationId: document.getElementById("end-location").value,
+          startDateTime: document.getElementById("start-date").value || null,
+          endDateTime: document.getElementById("end-date").value || null,
+        };
+
+        fetch("/api/trips", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(trip),
+        })
+          .then((response) => {
+            if (response.ok) {
+              // Force the page to reload to get the new changes.
+              // Could also just re-request the below fetch too.
+              location.reload();
+            } else {
+              console.log("Failed to add trip:", response.status);
+            }
+          })
+          .catch((error) => console.log(error));
+      }
+
+      document.getElementById("submit-button").addEventListener("onClick", addTrip);
 
       fetch("/api/trips?userId=1")
         .then((response) => response.json())
@@ -27,18 +63,20 @@
           trips.forEach((trip) => {
             let row = document.createElement("tr");
 
-            ["tripname", "startlocation", "endlocation", "startdatetime", "enddatetime"].forEach((field) => {
-              let cell = document.createElement("td");
-              if (field === "tripname") {
-                let link = document.createElement("a");
-                link.href = `/trips/${trip.tripid}`;
-                link.textContent = trip.tripname;
-                cell.appendChild(link);
-              } else {
-                cell.textContent = trip[field];
-              }
-              row.appendChild(cell);
-            });
+            ["tripname", "startlocation", "endlocation", "startdatetime", "enddatetime"].forEach(
+              (field) => {
+                let cell = document.createElement("td");
+                if (field === "tripname") {
+                  let link = document.createElement("a");
+                  link.href = `/trips/${trip.tripid}`;
+                  link.textContent = trip.tripname;
+                  cell.appendChild(link);
+                } else {
+                  cell.textContent = trip[field];
+                }
+                row.appendChild(cell);
+              },
+            );
 
             tripsTable.appendChild(row);
           });

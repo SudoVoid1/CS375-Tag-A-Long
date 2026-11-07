@@ -59,6 +59,23 @@ app.get("/api/trips/:tripId", (req, res) => {
     });
 });
 
+// API: Add a trip
+app.post("/api/trips", (req, res) => {
+  const { tripName, startLocationId, endLocationId, startDateTime, endDateTime } = req.body;
+  pool
+    .query(
+      `INSERT INTO trips (tripName, startLocationId, endLocationId, startDateTime, endDateTime, createdByUser)
+       VALUES ($1, $2, $3, $4, $5, 1)
+       RETURNING tripId`,
+      [tripName, startLocationId, endLocationId, startDateTime, endDateTime],
+    )
+    .then((result) => res.status(201).json(result.rows[0]))
+    .catch((error) => {
+      console.log(error);
+      res.status(500).send();
+    });
+});
+
 // Routing: send the user to trip.html page.
 app.get("/trips/:tripId", (req, res) => {
   res.sendFile(__dirname + "/public/trips/trip.html");
