@@ -27,6 +27,8 @@
   "bugs": {
     "url": "https://github.com/SudoVoid1/CS375-Tag-A-Long/issues"
   },
-  "homepage": "https://github.com/SudoVoid1/CS375-Tag-A-Long#readme"
-  
+  "homepage": "https://github.com/SudoVoid1/CS375-Tag-A-Long#readme",
+  "devDependencies": {
+    "@faker-js/faker": "^10.6.0"
+  }
 }

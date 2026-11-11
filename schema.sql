@@ -10,6 +10,14 @@ CREATE TABLE users (
     passwordHash TEXT NOT NULL,
     createdOn TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE TABLE user_pages (
+    page_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    page_slug VARCHAR(100) NOT NULL UNIQUE, --creates clean readable url id ://example.com/this-is-site
+    page_content TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
 CREATE TABLE locations (
     locationId BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     locationName VARCHAR(255) NOT NULL,
