@@ -1,0 +1,56 @@
+<!-- Set up this page so it pulls for each user -->
+      <!---previous trips, trips i want to go on, most traveled with/havent traveled with, passports/stamps, favorite trip, profile title, travel guides, number of trips, follow button, --->
+ 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <!-- Link to an external CSS stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="welcome">
+        <h1>Welcome back, [USER]!</h1>
+    </header>
+
+    <main>
+        <p>This is where your primary page content goes.</p>
+        <div class="book">
+  <!-- Paper 1 -->
+  <div class="paper flipped" id="p1">
+    <div class="front">
+      <h1>Front Cover</h1>
+      <button onclick="turnBack(1)">Open Book</button>
+    </div>
+    <div class="back">
+      <p>Page 1 Content</p>
+      <button onclick="turnForward(1)">Close Cover</button>
+    </div>
+  </div>
+
+  <!-- Paper 2 -->
+  <div class="paper" id="p2">
+    <div class="front">
+      <p>Page 2 Content</p>
+      <button onclick="turnBack(2)">Next Page</button>
+    </div>
+    <div class="back">
+      <h1>Back Cover</h1>
+      <button onclick="turnForward(2)">Previous Page</button>
+    </div>
+  </div>
+</div>
+
+    </main>
+
+    <footer>
+        <p> 2026 My Web Page</p>
+    </footer>
+
+    <!-- Link to an external JavaScript file -->
+    <script src="script.js"></script>
+</body>
+</html>
