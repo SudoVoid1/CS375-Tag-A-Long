@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS tripNotes CASCADE;
 DROP TABLE IF EXISTS activities CASCADE;
 DROP TABLE IF EXISTS tripMembers CASCADE;
 DROP TABLE IF EXISTS trips CASCADE;
@@ -66,4 +67,12 @@ CREATE TABLE activities (
     FOREIGN KEY (locationId) REFERENCES locations(locationId) ON DELETE SET NULL,
     CONSTRAINT nonNegativeCost CHECK (cost >= 0),
     CONSTRAINT positiveDuration CHECK (durationMinutes > 0)
+);
+CREATE TABLE tripNotes (
+    noteId BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tripId BIGINT NOT NULL,
+    userId BIGINT NOT NULL,
+    noteText TEXT NOT NULL,
+    createdAt TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (tripId, userId) REFERENCES tripMembers(tripId, userId) ON DELETE CASCADE
 );
