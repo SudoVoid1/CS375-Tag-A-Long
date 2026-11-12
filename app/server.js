@@ -14,7 +14,7 @@ pool.connect().then(function () {
 app.use(express.json());
 app.use(express.static("public"));
 app.use(express.static("trips"));
-app.use("/css", express.static("node_modules/water.css/out"));
+app.use("/css", express.static("../node_modules/water.css/out"));
 
 // Placeholder for the logged-in user until login exists.
 const currentUserId = 1;
@@ -99,10 +99,15 @@ app.post("/api/trips", (req, res) => {
   const { tripName, startLocationId, endLocationId, startDateTime, endDateTime } = req.body;
   pool
     .query(
-      `INSERT INTO trips (tripName, startLocationId, endLocationId, startDateTime, endDateTime, createdByUser)
-       VALUES ($1, $2, $3, $4, $5, 1)
-       RETURNING tripId`,
-      [tripName, startLocationId, endLocationId, startDateTime, endDateTime],
+      `WITH newTrip AS (
+        INSERT INTO trips (tripName, startLocationId, endLocationId, startDateTime, endDateTime, createdByUser)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING tripId
+      )
+      INSERT INTO tripMembers (tripId, userId)
+      SELECT tripId, $6 FROM newTrip
+      RETURNING tripId`,
+      [tripName, startLocationId, endLocationId, startDateTime, endDateTime, currentUserId],
     )
     .then((result) => res.status(201).json(result.rows[0]))
     .catch((error) => {
