@@ -15,6 +15,14 @@ app.use(express.json());
 app.use(express.static("public"));
 app.use(express.static("trips"));
 
+// Placeholder for the logged-in user until login exists.
+const currentUserId = 1;
+
+const { requireMember, requireCreator } = require("./middleware")(pool, currentUserId);
+
+// Applies the middleware (only the owner/member can access their trips) for EVERY trip route.
+app.use("/api/trips/:tripId", requireMember);
+
 // API: Get the trips a user is a member of, e.g. /api/trips?userId=1
 app.get("/api/trips", (req, res) => {
   pool
@@ -53,6 +61,26 @@ app.get("/api/trips/:tripId", (req, res) => {
       console.log(result.rows[0]);
       res.json(result.rows[0]);
     })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).send();
+    });
+});
+
+// API: Get the trips the current user is a member of
+app.get("/api/trips", (req, res) => {
+  pool
+    .query(
+      `SELECT trips.*, s.locationName AS startLocation, e.locationName AS endLocation
+       FROM trips
+       NATURAL JOIN tripMembers
+       JOIN locations s ON s.locationId = trips.startLocationId
+       JOIN locations e ON e.locationId = trips.endLocationId
+       WHERE tripMembers.userId = $1
+       ORDER BY trips.startDateTime`,
+      [currentUserId],
+    )
+    .then((result) => res.json(result.rows))
     .catch((error) => {
       console.log(error);
       res.status(500).send();
