@@ -123,6 +123,28 @@ app.get("/api/trips/:tripId/activities", (req, res) => {
     });
 });
 
+// API: Get the notes for a specific trip
+app.get("/api/trips/:tripId/notes", (req, res) => {
+  let tripId = req.params.tripId;
+  console.log(`Getting notes for trip ${tripId}`);
+  pool
+    .query(
+      `SELECT tripNotes.*, users.username
+       FROM tripNotes NATURAL JOIN users
+       WHERE tripId = $1
+       ORDER BY tripNotes.createdAt DESC`,
+      [tripId],
+    )
+    .then((result) => {
+      console.log(`Found ${result.rows.length} activities for trip ${tripId}:`, result.rows);
+      res.json(result.rows);
+    })
+    .catch((error) => {
+      console.log("The following error occured:", error);
+      res.status(500).send();
+    });
+});
+
 // API: Add a trip
 app.post("/api/trips", (req, res) => {
   let { tripName, startLocationId, endLocationId, startDateTime, endDateTime } = req.body;
@@ -207,6 +229,29 @@ app.post("/api/trips/:tripId/members", requireCreator, (req, res) => {
             res.status(201).json(newMember);
           }
         });
+    })
+    .catch((error) => {
+      console.log("The following error occured:", error);
+      res.status(500).send();
+    });
+});
+
+// API: Add a note to a trip (from the current user)
+app.post("/api/trips/:tripId/notes", (req, res) => {
+  let tripId = req.params.tripId;
+  let { noteText } = req.body;
+  console.log(`Adding a note to tripId: ${tripId}`);
+  pool
+    .query(
+      `INSERT INTO tripNotes (tripId, userId, noteText) 
+      VALUES ($1, $2, $3) 
+      RETURNING noteId`,
+      [tripId, currentUserId, noteText],
+    )
+    .then((result) => getOneRow(result).noteId)
+    .then((createdNoteId) => {
+      console.log(`A new note "${noteText}" was created with id ${createdNoteId}`);
+      res.status(201).json({ noteId: createdNoteId });
     })
     .catch((error) => {
       console.log("The following error occured:", error);
