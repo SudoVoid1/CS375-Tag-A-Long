@@ -29,3 +29,8 @@ INSERT INTO activities (tripId, createdByUser, locationId, activityName, categor
     (1, 1, 5, 'Walk through Central Park', 'Sightseeing', '2026-12-05', '10:00', 60, 0),
     (1, 2, 2, 'Dinner near Penn Station',  'Food',        '2026-12-05', '19:00', 90,  45.00),
     (2, 2, 3, 'Smithsonian museums',       'Museum',      '2027-01-16', '10:00', 120, 0);
+
+INSERT INTO tripNotes (tripId, userId, noteText) VALUES
+    (1, 1, 'Bring a warm coat, it will be cold in the park.'),
+    (1, 2, 'I booked the dinner reservation for 7pm.'),
+    (2, 2, 'Most Smithsonian museums are free, no tickets needed.');
