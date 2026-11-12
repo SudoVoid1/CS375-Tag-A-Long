@@ -4,7 +4,8 @@ module.exports = (pool, currentUserId) => {
   // tripId in the URL must be a integar >= 0.
   function checkTripId(req, res, next) {
     let tripId = req.params.tripId;
-    if (Number.isInteger(tripId) && tripId >= 0) {
+    // Regex to test if tripId is a number
+    if (/^\d+$/.test(tripId)) {
       next();
     } else {
       console.log(`Invalid trip id: ${tripId}`);
