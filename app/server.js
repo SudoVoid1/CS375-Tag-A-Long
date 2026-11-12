@@ -19,10 +19,12 @@ app.use("/css", express.static("../node_modules/water.css/out"));
 // Placeholder for the logged-in user until login exists.
 const currentUserId = 1;
 
-const { requireMember, requireCreator } = require("./middleware")(pool, currentUserId);
+const { checkTripId, requireMember, requireCreator } = require("./middleware")(pool, currentUserId);
 
-// Applies the middleware (only the owner/member can access their trips) for EVERY trip route.
-app.use("/api/trips/:tripId", requireMember);
+/* Applies the middleware on every trip/* request.
+ * First checks if a tripId is even valid, then if the current user is the owner/member of the requested trip (if not then they are blocked).
+ */
+app.use("/api/trips/:tripId", checkTripId, requireMember);
 
 /*
  * pool.query returns a object with potentially multiple rows (even if querying one thing),
