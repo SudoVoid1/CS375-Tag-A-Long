@@ -1,28 +1,4 @@
-body {
-	margin: 2rem;
+#tabs button.active {
+  outline: 2px solid currentColor;
 }
 
-table {
-	border-collapse: collapse;
-}
-
-th, td {
-	border: 1px solid black;
-	padding: 10px;
-}
-
-.form {
-	padding: 1rem;
-	margin: 2rem 0;
-	border: 1px solid black;
-}
-.form label {
-	font-weight: bold;
-}
-.form div {
-	margin: 1rem 0;
-}
-
-#message {
-	margin: 1rem 0;
-}

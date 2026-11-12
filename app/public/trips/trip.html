@@ -3,45 +3,166 @@
   <head>
     <meta charset="UTF-8" />
     <title>Trip</title>
+    <link rel="stylesheet" href="/css/water.css" />
     <link rel="stylesheet" href="/trips/trip-style.css" />
   </head>
   <body>
-    <h1 id="name">Trip:</h1>
+    <a href="/trips/">← Back to my trips</a>
+    <h1 id="name">Trip</h1>
+    <p id="subtitle"></p>
 
-    <nav>
-      <a href="#" data-section="travel">Travel</a>
-      <a href="#" data-section="budget">Budget</a>
-      <a href="#" data-section="itinerary">Itinerary</a>
-      <a href="#" data-section="notes">Notes</a>
+    <nav id="tabs">
+      <button data-section="travel">Travel</button>
+      <button data-section="budget">Budget</button>
+      <button data-section="itinerary">Itinerary</button>
+      <button data-section="notes">Notes</button>
+      <button data-section="members">Members</button>
     </nav>
 
     <main>
+      <!-- Show the travel page by default and hide the others. -->
       <section id="travel">
-        <h2>Travel</h2>
-        <table id="trip-table">
-          <tr>
-            <th>Name</th>
-            <th>From</th>
-            <th>To</th>
-            <th>Start</th>
-            <th>End</th>
-          </tr>
+        <h2>Travel Plans</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Travel by</th>
+              <th>Carrier</th>
+              <th>Departs</th>
+              <th>Arrives</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody id="travel-table"></tbody>
+        </table>
+
+        <h2>How are you getting there?</h2>
+        <p id="travel-route"></p>
+        <label for="travel-mode">Mode of Transportation</label>
+        <select id="travel-mode">
+          <option value="train">Train</option>
+          <option value="plane">Plane</option>
+          <option value="driving">Driving</option>
+          <option value="bus">Bus</option>
+          <option value="bus">Walking</option>
+          <option value="bus">Biking</option>
+          <option value="bus">Other</option>
+        </select>
+        <button id="search-travel-button">Search</button>
+        <table id="travel-options" hidden>
+          <thead>
+            <tr>
+              <th>Carrier</th>
+              <th>Departs</th>
+              <th>Arrives</th>
+              <th>Duration</th>
+              <th>Price</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="travel-options-table"></tbody>
+        </table>
+        <p id="no-travel-options" hidden>No options found for this way of travel.</p>
+      </section>
+
+      <section id="budget" hidden>
+        <h2>Budget</h2>
+        <p>Total budget: <strong id="total-budget">$0.00</strong></p>
+        <p>Planned spending (travel + activities): <strong id="total-spent">$0.00</strong></p>
+        <p>Remaining: <strong id="remaining">$0.00</strong></p>
+
+        <label for="my-budget">Your budget ($)</label>
+        <input id="my-budget" type="number" min="0" step="0.01" />
+        <button id="save-budget-button">Save</button>
+        <p id="budget-message"></p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Budget</th>
+            </tr>
+          </thead>
+          <tbody id="members-table"></tbody>
         </table>
       </section>
 
-      <section id="budget">
-        <h2>Budget</h2>
-      </section>
-
-      <section id="itinerary">
+      <section id="itinerary" hidden>
         <h2>Itinerary</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Activity</th>
+              <th>Category</th>
+              <th>Location</th>
+              <th>Duration</th>
+              <th>Cost</th>
+            </tr>
+          </thead>
+          <tbody id="activities-table"></tbody>
+        </table>
+        <p id="no-activities" hidden>No activities yet.</p>
+
+        <h2>Add an activity</h2>
+        <label for="activity-name">Activity</label>
+        <input id="activity-name" />
+
+        <label for="activity-category">Category</label>
+        <input id="activity-category" />
+
+        <label for="activity-location">Location</label>
+        <select id="activity-location"></select>
+
+        <label for="activity-date">Date</label>
+        <input id="activity-date" type="date" />
+
+        <label for="activity-time">Time</label>
+        <input id="activity-time" type="time" />
+
+        <label for="activity-duration">Duration (minutes)</label>
+        <input id="activity-duration" type="number" min="1" value="30" />
+
+        <label for="activity-cost">Cost ($)</label>
+        <input id="activity-cost" type="number" min="0" step="0.01" value="0" />
+
+        <button id="add-activity-button">Add activity</button>
+        <p id="activity-message"></p>
       </section>
 
-      <section id="notes">
+      <section id="notes" hidden>
         <h2>Notes</h2>
+        <label for="note-text">Write a note for the group</label>
+        <textarea id="note-text" rows="3"></textarea>
+        <button id="add-note-button">Add note</button>
+        <div id="notes-list"></div>
+      </section>
+
+      <section id="members" hidden>
+        <h2>Members</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Role</th>
+              <th>Joined</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="trip-members-table"></tbody>
+        </table>
+
+        <!-- Only allow the owner to add/remove users -->
+        <div id="add-member-card" hidden>
+          <h2>Add a member</h2>
+          <label for="member-username">Username</label>
+          <input id="member-username" />
+          <button id="add-member-button">Add member</button>
+          <p id="member-message"></p>
+        </div>
       </section>
     </main>
-
-    <script src="/trips/trips.js"></script>
   </body>
 </html>
