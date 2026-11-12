@@ -85,7 +85,7 @@ function getLocationOptions() {
     .catch((error) => console.log(error));
 }
 
-document.getElementById("submit-button").addEventListener("onClick", addTrip);
+document.getElementById("submit-button").addEventListener("click", addTrip);
 
 // Get all the users trips and location options on page load.
 getLocationOptions();
