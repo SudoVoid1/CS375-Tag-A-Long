@@ -2,3 +2,12 @@
   outline: 2px solid currentColor;
 }
 
+#notes-list .note {
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 0 1rem;
+  margin: 1rem 0;
+}
+#notes-list .note p {
+  white-space: pre-wrap;
+}
