@@ -3,9 +3,10 @@
 module.exports = (pool, currentUserId) => {
   // Only the owner/members of a trip can see or change it's details.
   function requireMember(req, res, next) {
+    let tripId = req.params.tripId;
     pool
       .query(`SELECT * FROM tripMembers WHERE tripId = $1 AND userId = $2`, [
-        req.params.tripId,
+        tripId,
         currentUserId,
       ])
       .then((result) => {
@@ -17,16 +18,17 @@ module.exports = (pool, currentUserId) => {
         }
       })
       .catch((error) => {
-        console.log(error);
+        console.log("The following error occured:", error);
         res.status(500).send();
       });
   }
 
   // Only the trip's creator can add or remove members.
   function requireCreator(req, res, next) {
+    let tripId = req.params.tripId;
     pool
       .query(`SELECT * FROM trips WHERE tripId = $1 AND createdByUser = $2`, [
-        req.params.tripId,
+        tripId,
         currentUserId,
       ])
       .then((result) => {
@@ -38,7 +40,7 @@ module.exports = (pool, currentUserId) => {
         }
       })
       .catch((error) => {
-        console.log(error);
+        console.log("The following error occured:", error);
         res.status(500).send();
       });
   }
