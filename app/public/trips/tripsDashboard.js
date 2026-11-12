@@ -14,8 +14,8 @@ function addTrip() {
     endDateTime: document.getElementById("end-date").value || null,
   };
 
-  // Restricts the name field to be required
-  // TODO any others? + validation on server for this.
+  // Quick check here so the user doesn't wait on the server for an obvious mistake.
+  // The server checks everything again (see POST /api/trips in server.js).
   if (!trip.tripName) {
     document.getElementById("message").textContent = "Please enter a trip name.";
     return;
@@ -31,7 +31,10 @@ function addTrip() {
         // Reload the page to show the new trip in the table.
         location.reload();
       } else {
-        document.getElementById("message").textContent = "Failed to add trip.";
+        response
+          .json()
+          .then((body) => (document.getElementById("message").textContent = body.error))
+          .catch(() => (document.getElementById("message").textContent = "Failed to add trip."));
       }
     })
     .catch((error) => console.log(error));
