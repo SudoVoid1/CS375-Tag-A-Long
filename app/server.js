@@ -75,6 +75,24 @@ app.get("/api/locations", (req, res) => {
     });
 });
 
+// API: Gets a specific trip's activities
+app.get("/api/trips/:tripId/activities", (req, res) => {
+  pool
+    .query(
+      `SELECT activities.*, locations.locationName
+       FROM activities
+       LEFT JOIN locations ON locations.locationId = activities.locationId
+       WHERE tripId = $1
+       ORDER BY activityDate, startTime`,
+      [req.params.tripId],
+    )
+    .then((result) => res.json(result.rows))
+    .catch((error) => {
+      console.log(error);
+      res.status(500).send();
+    });
+});
+
 // API: Add a trip
 app.post("/api/trips", (req, res) => {
   const { tripName, startLocationId, endLocationId, startDateTime, endDateTime } = req.body;
@@ -103,6 +121,36 @@ app.post("/api/locations", (req, res) => {
       [locationName, city, region, country, latitude, longitude],
     )
     .then((result) => res.status(201).json(result.rows[0]))
+    .catch((error) => {
+      console.log(error);
+      res.status(500).send();
+    });
+});
+
+// API: Add a tripMember by username, restricts this functionality to the owner only.
+app.post("/api/trips/:tripId/members", requireCreator, (req, res) => {
+  pool
+    .query(`SELECT userId FROM users WHERE username = $1`, [req.body.username])
+    .then((result) => {
+      // Maybe we add a friend system so its easier to add members?
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: "No user with that username" });
+      }
+      return pool
+        .query(
+          `INSERT INTO tripMembers (tripId, userId) VALUES ($1, $2)
+           RETURNING userId`,
+          [req.params.tripId, result.rows[0].userid],
+        )
+        .then((insertedRows) => {
+          if (insertedRows.rows.length === 0) {
+            // code 409 is built in to signify conflict.
+            res.status(409).json({ error: "Already a member of this trip" });
+          } else {
+            res.status(201).json(insertedRows.rows[0]);
+          }
+        });
+    })
     .catch((error) => {
       console.log(error);
       res.status(500).send();
