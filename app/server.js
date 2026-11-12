@@ -23,23 +23,20 @@ const { requireMember, requireCreator } = require("./middleware")(pool, currentU
 // Applies the middleware (only the owner/member can access their trips) for EVERY trip route.
 app.use("/api/trips/:tripId", requireMember);
 
-// API: Get the trips a user is a member of, e.g. /api/trips?userId=1
+// API: Get ALL the trips the current user is a member of
 app.get("/api/trips", (req, res) => {
   pool
-    // .query(`SELECT * FROM trips NATURAL JOIN tripMembers WHERE userId = $1 `, [
-    //   req.query.userId,
-    // ])
-    // Use the get all for now.
     .query(
       `SELECT trips.*, s.locationName AS startLocation, e.locationName AS endLocation
        FROM trips
+       NATURAL JOIN tripMembers
        JOIN locations s ON s.locationId = trips.startLocationId
-       JOIN locations e ON e.locationId = trips.endLocationId`,
+       JOIN locations e ON e.locationId = trips.endLocationId
+       WHERE tripMembers.userId = $1
+       ORDER BY trips.startDateTime`,
+      [currentUserId],
     )
-    .then((result) => {
-      console.log(result.rows);
-      res.json(result.rows);
-    })
+    .then((result) => res.json(result.rows))
     .catch((error) => {
       console.log(error);
       res.status(500).send();
@@ -67,19 +64,10 @@ app.get("/api/trips/:tripId", (req, res) => {
     });
 });
 
-// API: Get the trips the current user is a member of
-app.get("/api/trips", (req, res) => {
+// API: Get all locations (for the From / To / Location dropdowns)
+app.get("/api/locations", (req, res) => {
   pool
-    .query(
-      `SELECT trips.*, s.locationName AS startLocation, e.locationName AS endLocation
-       FROM trips
-       NATURAL JOIN tripMembers
-       JOIN locations s ON s.locationId = trips.startLocationId
-       JOIN locations e ON e.locationId = trips.endLocationId
-       WHERE tripMembers.userId = $1
-       ORDER BY trips.startDateTime`,
-      [currentUserId],
-    )
+    .query(`SELECT * FROM locations ORDER BY locationName`)
     .then((result) => res.json(result.rows))
     .catch((error) => {
       console.log(error);
@@ -96,6 +84,23 @@ app.post("/api/trips", (req, res) => {
        VALUES ($1, $2, $3, $4, $5, 1)
        RETURNING tripId`,
       [tripName, startLocationId, endLocationId, startDateTime, endDateTime],
+    )
+    .then((result) => res.status(201).json(result.rows[0]))
+    .catch((error) => {
+      console.log(error);
+      res.status(500).send();
+    });
+});
+
+// API: Add a location
+app.post("/api/locations", (req, res) => {
+  const { locationName, city, region, country, latitude, longitude } = req.body;
+  pool
+    .query(
+      `INSERT INTO trips (locationName, city, region, country, latitude, longitude)
+       VALUES ($1, $2, $3, $4, $5, 1)
+       RETURNING tripId`,
+      [locationName, city, region, country, latitude, longitude],
     )
     .then((result) => res.status(201).json(result.rows[0]))
     .catch((error) => {
