@@ -14,6 +14,7 @@ pool.connect().then(function () {
 app.use(express.json());
 app.use(express.static("public"));
 app.use(express.static("trips"));
+app.use("/css", express.static("node_modules/water.css/out"));
 
 // Placeholder for the logged-in user until login exists.
 const currentUserId = 1;

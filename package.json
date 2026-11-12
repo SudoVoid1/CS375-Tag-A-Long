@@ -10,7 +10,8 @@
   "dependencies": {
     "dotenv": "^18.0.9",
     "express": "^5.3.0",
-    "pg": "^8.23.1"
+    "pg": "^8.23.1",
+    "water.css": "^2.1.1"
   },
   "name": "cs375-tag-a-long",
   "version": "1.0.0",
@@ -28,5 +29,4 @@
     "url": "https://github.com/SudoVoid1/CS375-Tag-A-Long/issues"
   },
   "homepage": "https://github.com/SudoVoid1/CS375-Tag-A-Long#readme"
-  
 }

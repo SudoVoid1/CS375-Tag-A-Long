@@ -2,86 +2,46 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>My Trips</title>
-    <link rel="stylesheet" href="trip-style.css" />
+    <link rel="stylesheet" href="/css/water.css" />
+    <link rel="stylesheet" href="/trips/trip-style.css" />
   </head>
   <body>
     <h1>My Trips</h1>
 
-    <table id="trips-table">
-      <tr>
-        <th>Name</th>
-        <th>From</th>
-        <th>To</th>
-        <th>Start</th>
-        <th>End</th>
-      </tr>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Start</th>
+          <th>End</th>
+        </tr>
+      </thead>
+      <tbody id="trips-table"></tbody>
     </table>
 
-    <div>
-      Name <input id="name" /> From (location id) <input id="start-location" type="number" /> To
-      (location id) <input id="end-location" type="number" /> Start
-      <input id="start-date" type="datetime-local" /> End
-      <input id="end-date" type="datetime-local" />
-      <button id="submit-button">Add a trip</button>
-    </div>
+    <h2>Add a trip</h2>
+    <label for="name">Trip name</label>
+    <input id="name" />
 
-    <script>
-      const tripsTable = document.getElementById("trips-table");
+    <label for="start-location">From</label>
+    <select id="start-location"></select>
 
-      function addTrip() {
-        const trip = {
-          tripName: document.getElementById("name").value,
-          startLocationId: document.getElementById("start-location").value,
-          endLocationId: document.getElementById("end-location").value,
-          startDateTime: document.getElementById("start-date").value || null,
-          endDateTime: document.getElementById("end-date").value || null,
-        };
+    <label for="end-location">To</label>
+    <select id="end-location"></select>
 
-        fetch("/api/trips", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(trip),
-        })
-          .then((response) => {
-            if (response.ok) {
-              // Force the page to reload to get the new changes.
-              // Could also just re-request the below fetch too.
-              location.reload();
-            } else {
-              console.log("Failed to add trip:", response.status);
-            }
-          })
-          .catch((error) => console.log(error));
-      }
+    <label for="start-date">Start</label>
+    <input id="start-date" type="datetime-local" />
 
-      document.getElementById("submit-button").addEventListener("onClick", addTrip);
+    <label for="end-date">End</label>
+    <input id="end-date" type="datetime-local" />
 
-      fetch("/api/trips?userId=1")
-        .then((response) => response.json())
-        .then((trips) => {
-          trips.forEach((trip) => {
-            let row = document.createElement("tr");
+    <button id="submit-button">Add trip</button>
+    <p id="message"></p>
 
-            ["tripname", "startlocation", "endlocation", "startdatetime", "enddatetime"].forEach(
-              (field) => {
-                let cell = document.createElement("td");
-                if (field === "tripname") {
-                  let link = document.createElement("a");
-                  link.href = `/trips/${trip.tripid}`;
-                  link.textContent = trip.tripname;
-                  cell.appendChild(link);
-                } else {
-                  cell.textContent = trip[field];
-                }
-                row.appendChild(cell);
-              },
-            );
-
-            tripsTable.appendChild(row);
-          });
-        })
-        .catch((error) => console.log(error));
-    </script>
+    <script src="/trips/tripsDashboard.js"></script>
   </body>
 </html>
