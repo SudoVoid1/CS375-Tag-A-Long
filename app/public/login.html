@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log In | Project Name</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="navbar">
+    <a class="brand" href="index.html">Project Name</a>
+    <nav>
+      <a href="index.html">Home</a>
+    </nav>
+  </header>
+
+  <main class="auth-wrapper">
+    <form id="login-form" class="card" novalidate>
+      <h1>Log In</h1>
+
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" autocomplete="username" required>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required>
+
+      <p id="login-error" class="error" role="alert"></p>
+
+      <button type="submit" class="btn btn-full">Log In</button>
+      <p class="small">Don't have an account? <a href="#">Sign up</a></p>
+    </form>
+  </main>
+
+  <script src="login.js"></script>
+</body>
+</html>
