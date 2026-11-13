@@ -1,18 +1,4 @@
-const tripId = window.location.pathname.split("/").pop();
 let sectionNames = ["travel", "budget", "itinerary", "notes", "members"];
-
-//Helper functions
-function formatDateTime(value) {
-  return value ? new Date(value).toLocaleString() : "";
-}
-
-function formatDate(value) {
-  return value ? new Date(value).toLocaleDateString() : "";
-}
-
-function formatMoney(value) {
-  return "$" + Number(value || 0).toFixed(2);
-}
 
 function selectSectionToDisplay(selected) {
   sectionNames.forEach((sectionName) => {
@@ -77,6 +63,7 @@ function loadTrip() {
       // Pre-fetch all the other data now that we confirmed the user is a owner/member of the trip.
       //loadxyz()
       //...
+      loadNotes();
     })
     .catch((error) => console.log(error));
 }
