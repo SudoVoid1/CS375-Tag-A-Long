@@ -239,7 +239,15 @@ app.post("/api/trips/:tripId/members", requireCreator, (req, res) => {
 // API: Add a note to a trip (from the current user)
 app.post("/api/trips/:tripId/notes", (req, res) => {
   let tripId = req.params.tripId;
-  let { noteText } = req.body;
+  let { noteText } = req.body || {};
+
+  // Check that noteText is populated and a string
+  if (typeof noteText !== "string" || noteText.trim() === "") {
+    console.log(`Invalid note text: ${noteText}`);
+    return res.status(400).json({ error: "Note can't be empty" });
+  }
+  noteText = noteText.trim();
+
   console.log(`Adding a note to tripId: ${tripId}`);
   pool
     .query(
@@ -248,7 +256,7 @@ app.post("/api/trips/:tripId/notes", (req, res) => {
       RETURNING noteId`,
       [tripId, currentUserId, noteText],
     )
-    .then((result) => getOneRow(result).noteId)
+    .then((result) => getOneRow(result).noteid)
     .then((createdNoteId) => {
       console.log(`A new note "${noteText}" was created with id ${createdNoteId}`);
       res.status(201).json({ noteId: createdNoteId });
