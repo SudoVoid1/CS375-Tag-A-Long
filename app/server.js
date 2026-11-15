@@ -67,12 +67,14 @@ app.get("/api/trips/:tripId", (req, res) => {
   console.log(`Getting trip ${tripId}`);
   pool
     .query(
-      `SELECT trips.*, s.locationName AS startLocation, e.locationName AS endLocation
+      // isCreator is true/false: whether the current user made this trip
+      `SELECT trips.*, s.locationName AS startLocation, e.locationName AS endLocation,
+              trips.createdByUser = $2 AS isCreator
        FROM trips
        JOIN locations s ON s.locationId = trips.startLocationId
        JOIN locations e ON e.locationId = trips.endLocationId
        WHERE tripId = $1`,
-      [tripId],
+      [tripId, currentUserId],
     )
     .then((result) => getOneRow(result))
     .then((trip) => {
@@ -115,6 +117,32 @@ app.get("/api/trips/:tripId/activities", (req, res) => {
     )
     .then((result) => {
       console.log(`Found ${result.rows.length} activities for trip ${tripId}:`, result.rows);
+      res.json(result.rows);
+    })
+    .catch((error) => {
+      console.log("The following error occured:", error);
+      res.status(500).send();
+    });
+});
+
+// API: Get the members of a specific trip.
+app.get("/api/trips/:tripId/members", (req, res) => {
+  let tripId = req.params.tripId;
+  console.log(`Getting members for trip ${tripId}`);
+  pool
+    .query(
+      // If isCreator is true it allows the user to add/remove people.
+      `SELECT users.userId, users.username, tripMembers.joinedOn,
+              trips.createdByUser = users.userId AS isCreator
+       FROM tripMembers
+       NATURAL JOIN users
+       JOIN trips ON trips.tripId = tripMembers.tripId
+       WHERE tripMembers.tripId = $1
+       ORDER BY tripMembers.joinedOn`,
+      [tripId],
+    )
+    .then((result) => {
+      console.log(`Found ${result.rows.length} members for trip ${tripId}:`, result.rows);
       res.json(result.rows);
     })
     .catch((error) => {
