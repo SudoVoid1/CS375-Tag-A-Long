@@ -63,6 +63,7 @@ function loadTrip() {
       // Pre-fetch all the other data now that we confirmed the user is a owner/member of the trip.
       //loadxyz()
       //...
+      loadMembers();
       loadNotes();
     })
     .catch((error) => console.log(error));
