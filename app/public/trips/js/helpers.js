@@ -18,3 +18,18 @@ function clearChildren(element) {
     element.removeChild(element.firstChild);
   }
 }
+
+// Creates an element with text in it.
+function createTextElement(tag, text) {
+  let element = document.createElement(tag);
+  element.textContent = text;
+  return element;
+}
+
+// Creates a button that runs the onClick function.
+function createButton(text, onClick) {
+  let button = document.createElement("button");
+  button.textContent = text;
+  button.addEventListener("click", onClick);
+  return button;
+}

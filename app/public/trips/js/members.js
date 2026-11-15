@@ -1,20 +1,11 @@
 const tripMembersTable = document.getElementById("trip-members-table");
 let isCreator = false;
 
-function createCell(text) {
-  let cell = document.createElement("td");
-  cell.textContent = text;
-  return cell;
-}
-
 function appendRemoveButton(member) {
   let cell = document.createElement("td");
 
   if (isCreator && !member.iscreator) {
-    let button = document.createElement("button");
-    button.textContent = "Remove";
-    button.addEventListener("click", () => removeMember(member));
-    cell.appendChild(button);
+    cell.appendChild(createButton("Remove", () => deleteMember(member)));
   }
   return cell;
 }
@@ -26,9 +17,9 @@ function createMemberRow(memberEntry) {
   let row = document.createElement("tr");
   let role = memberEntry.iscreator ? "Creator" : "Member";
 
-  row.appendChild(createCell(memberEntry.username));
-  row.appendChild(createCell(role));
-  row.appendChild(createCell(formatDate(memberEntry.joinedon)));
+  row.appendChild(createTextElement("td", memberEntry.username));
+  row.appendChild(createTextElement("td", role));
+  row.appendChild(createTextElement("td", formatDate(memberEntry.joinedon)));
   row.appendChild(appendRemoveButton(memberEntry));
   return row;
 }
@@ -62,7 +53,27 @@ function addMember() {
         usernameField.value = "";
         loadMembers();
       } else {
-        // Can return unknown username, already a member, or some server error.
+        response.json().then((body) => (message.textContent = body.error));
+      }
+    })
+    .catch((error) => console.log(error));
+}
+
+function deleteMember(member) {
+  const message = document.getElementById("member-message");
+  message.textContent = "";
+
+  let question =
+    `Remove ${member.username} from this trip? ` +
+    "Their activities, notes and travel plan for this trip will be deleted too.";
+  if (!confirm(question)) return;
+
+  fetch(`/api/trips/${tripId}/members/${member.userid}`, { method: "DELETE" })
+    .then((response) => {
+      if (response.ok) {
+        loadMembers();
+        loadNotes();
+      } else {
         response.json().then((body) => (message.textContent = body.error));
       }
     })

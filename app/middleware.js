@@ -13,6 +13,16 @@ module.exports = (pool, currentUserId) => {
     }
   }
 
+  function checkUserId(req, res, next) {
+    let userId = req.params.userId;
+    if (/^\d+$/.test(userId)) {
+      next();
+    } else {
+      console.log(`Invalid user id: ${userId}`);
+      return res.status(400).json({ error: "User id must be a whole number" });
+    }
+  }
+
   // Only the owner/members of a trip can see or change it's details.
   function requireMember(req, res, next) {
     let tripId = req.params.tripId;
@@ -59,5 +69,5 @@ module.exports = (pool, currentUserId) => {
       });
   }
 
-  return { checkTripId, requireMember, requireCreator };
+  return { checkTripId, checkUserId, requireMember, requireCreator };
 };

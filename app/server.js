@@ -19,7 +19,10 @@ app.use("/css", express.static("../node_modules/water.css/out"));
 // Placeholder for the logged-in user until login exists.
 const currentUserId = 1;
 
-const { checkTripId, requireMember, requireCreator } = require("./middleware")(pool, currentUserId);
+const { checkTripId, checkUserId, requireMember, requireCreator } = require("./middleware")(
+  pool,
+  currentUserId,
+);
 
 /* Applies the middleware on every trip/* request.
  * First checks if a tripId is even valid, then if the current user is the owner/member of the requested trip (if not then they are blocked).
@@ -157,14 +160,14 @@ app.get("/api/trips/:tripId/notes", (req, res) => {
   console.log(`Getting notes for trip ${tripId}`);
   pool
     .query(
-      `SELECT tripNotes.*, users.username
+      `SELECT tripNotes.*, users.username, tripNotes.userId = $2 AS isMyNote
        FROM tripNotes NATURAL JOIN users
        WHERE tripId = $1
        ORDER BY tripNotes.createdAt DESC`,
-      [tripId],
+      [tripId, currentUserId],
     )
     .then((result) => {
-      console.log(`Found ${result.rows.length} activities for trip ${tripId}:`, result.rows);
+      console.log(`Found ${result.rows.length} notes for trip ${tripId}:`, result.rows);
       res.json(result.rows);
     })
     .catch((error) => {
@@ -288,6 +291,77 @@ app.post("/api/trips/:tripId/notes", (req, res) => {
     .then((createdNoteId) => {
       console.log(`A new note "${noteText}" was created with id ${createdNoteId}`);
       res.status(201).json({ noteId: createdNoteId });
+    })
+    .catch((error) => {
+      console.log("The following error occured:", error);
+      res.status(500).send();
+    });
+});
+
+// API: Delete a note. Only the person who wrote it can delete it.
+app.delete("/api/trips/:tripId/notes/:noteId", (req, res) => {
+  let tripId = req.params.tripId;
+  let noteId = req.params.noteId;
+
+  // noteId must be only digits, same check as checkTripId
+  if (!/^\d+$/.test(noteId)) {
+    console.log(`Invalid note id: ${noteId}`);
+    return res.status(400).json({ error: "Note id must be a whole number" });
+  }
+
+  console.log(`User ${currentUserId} deleting note ${noteId} from trip ${tripId}`);
+  pool
+    .query(`SELECT userId FROM tripNotes WHERE noteId = $1 AND tripId = $2`, [noteId, tripId])
+    .then((result) => getOneRow(result))
+    .then((note) => {
+      if (!note) {
+        console.log(`No note ${noteId} in trip ${tripId}`);
+        return res.status(404).json({ error: "Note not found" });
+      }
+      // Postgres sends BIGINT ids back as strings, so compare as numbers
+      if (Number(note.userid) !== currentUserId) {
+        console.log(`User ${currentUserId} tried to delete someone else's note ${noteId}`);
+        return res.status(403).json({ error: "You can only delete your own notes" });
+      }
+      return pool.query(`DELETE FROM tripNotes WHERE noteId = $1`, [noteId]).then(() => {
+        console.log(`Deleted note ${noteId}`);
+        // 204 = worked, nothing to send back
+        res.status(204).send();
+      });
+    })
+    .catch((error) => {
+      console.log("The following error occured:", error);
+      res.status(500).send();
+    });
+});
+
+// API: Remove a trip member and everything they added.
+app.delete("/api/trips/:tripId/members/:userId", [requireCreator, checkUserId], (req, res) => {
+  let tripId = req.params.tripId;
+  let userId = req.params.userId;
+
+  // Check the creater isnt removing themselves
+  if (Number(userId) === currentUserId) {
+    console.log(`Creator tried to remove themselves from trip ${tripId}`);
+    return res.status(400).json({ error: "The creator can't be removed" });
+  }
+
+  console.log(`Removing user ${userId} from trip ${tripId}`);
+  pool
+    .query(
+      `DELETE FROM tripMembers WHERE tripId = $1 AND userId = $2
+       RETURNING userId`,
+      [tripId, userId],
+    )
+    .then((result) => getOneRow(result))
+    .then((removedMember) => {
+      // No row back means they weren't a member of this trip
+      if (!removedMember) {
+        console.log(`User ${userId} is not a member of trip ${tripId}`);
+        return res.status(404).json({ error: "That user isn't a member of this trip" });
+      }
+      console.log(`Removed user ${userId} from trip ${tripId}`);
+      res.status(204).send();
     })
     .catch((error) => {
       console.log("The following error occured:", error);
