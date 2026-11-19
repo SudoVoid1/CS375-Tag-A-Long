@@ -1,16 +1,6 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 
-body {
-  height: 100vh;
-  display: flex;
-  justify-content: left;
-  /*align-items: center;*/
-  background-color: #ffffff;
-}
+
+
 
 /* Book Container */
 .book {
