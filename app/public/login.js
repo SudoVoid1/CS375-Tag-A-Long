@@ -1,15 +1,15 @@
-const form = document.getElementById('login-form');
-const errorBox = document.getElementById('login-error');
+const form = document.getElementById("login-form");
+const errorBox = document.getElementById("login-error");
 
-form.addEventListener('submit', (event) => {
+form.addEventListener("submit", (event) => {
   event.preventDefault();
-  errorBox.textContent = '';
+  errorBox.textContent = "";
 
   const username = form.username.value.trim();
   const password = form.password.value;
 
   if (!username || !password) {
-    errorBox.textContent = 'Please enter both a username and a password.';
+    errorBox.textContent = "Please enter both a username and a password.";
     return;
   }
 
@@ -19,5 +19,5 @@ form.addEventListener('submit', (event) => {
   //   headers: { 'Content-Type': 'application/json' },
   //   body: JSON.stringify({ username, password })
   // });
-  console.log('Login submitted for:', username);
+  console.log("Login submitted for:", username);
 });
