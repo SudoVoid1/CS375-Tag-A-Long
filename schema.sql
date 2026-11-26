@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS sessions CASCADE;
 DROP TABLE IF EXISTS tripNotes CASCADE;
 DROP TABLE IF EXISTS activities CASCADE;
 DROP TABLE IF EXISTS tripMembers CASCADE;
@@ -10,6 +11,13 @@ CREATE TABLE users (
     username VARCHAR(50) NOT NULL UNIQUE,
     passwordHash TEXT NOT NULL,
     createdOn TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- One row per logged-in browser. The token is the random value stored in the
+-- "token" cookie; looking it up tells the server which user is making a request.
+CREATE TABLE sessions (
+    token TEXT PRIMARY KEY,
+    userId BIGINT NOT NULL REFERENCES users(userId) ON DELETE CASCADE,
+    createdAt TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE TABLE locations (
     locationId BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

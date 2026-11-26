@@ -4,6 +4,7 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+//Postgres Utilities
 const env = require("../env.json");
 const Pool = pg.Pool;
 const pool = new Pool(env);
@@ -11,23 +12,19 @@ pool.connect().then(function () {
   console.log(`Connected to database ${env.database}`);
 });
 
+//Login/Hasing Utilities
+const argon2 = require("argon2");
+const cookieParser = require("cookie-parser");
+const crypto = require("crypto");
+
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.static("public"));
 app.use(express.static("trips"));
 app.use("/css", express.static("../node_modules/water.css/out"));
 
-// Placeholder for the logged-in user until login exists.
-const currentUserId = 1;
-
-const { checkTripId, checkUserId, requireMember, requireCreator } = require("./middleware")(
-  pool,
-  currentUserId,
-);
-
-/* Applies the middleware on every trip/* request.
- * First checks if a tripId is even valid, then if the current user is the owner/member of the requested trip (if not then they are blocked).
- */
-app.use("/api/trips/:tripId", checkTripId, requireMember);
+const { requireLogin, checkTripId, checkUserId, requireMember, requireCreator } =
+  require("./middleware")(pool);
 
 /*
  * pool.query returns a object with potentially multiple rows (even if querying one thing),
@@ -42,7 +39,7 @@ function getOneRow(result) {
 
 // API: Get ALL the trips the current user is a member of
 app.get("/api/trips", (req, res) => {
-  console.log(`Getting trips for user ${currentUserId}`);
+  console.log(`Getting trips for user ${req.userId}`);
   pool
     .query(
       `SELECT trips.*, s.locationName AS startLocation, e.locationName AS endLocation
@@ -52,10 +49,10 @@ app.get("/api/trips", (req, res) => {
        JOIN locations e ON e.locationId = trips.endLocationId
        WHERE tripMembers.userId = $1
        ORDER BY trips.startDateTime`,
-      [currentUserId],
+      [req.userId],
     )
     .then((result) => {
-      console.log(`Found ${result.rows.length} trips for user ${currentUserId}:`, result.rows);
+      console.log(`Found ${result.rows.length} trips for user ${req.userId}:`, result.rows);
       res.json(result.rows);
     })
     .catch((error) => {
@@ -77,7 +74,7 @@ app.get("/api/trips/:tripId", (req, res) => {
        JOIN locations s ON s.locationId = trips.startLocationId
        JOIN locations e ON e.locationId = trips.endLocationId
        WHERE tripId = $1`,
-      [tripId, currentUserId],
+      [tripId, req.userId],
     )
     .then((result) => getOneRow(result))
     .then((trip) => {
@@ -164,7 +161,7 @@ app.get("/api/trips/:tripId/notes", (req, res) => {
        FROM tripNotes NATURAL JOIN users
        WHERE tripId = $1
        ORDER BY tripNotes.createdAt DESC`,
-      [tripId, currentUserId],
+      [tripId, req.userId],
     )
     .then((result) => {
       console.log(`Found ${result.rows.length} notes for trip ${tripId}:`, result.rows);
@@ -179,7 +176,7 @@ app.get("/api/trips/:tripId/notes", (req, res) => {
 // API: Add a trip
 app.post("/api/trips", (req, res) => {
   let { tripName, startLocationId, endLocationId, startDateTime, endDateTime } = req.body;
-  console.log(`Adding trip ${tripName} for user ${currentUserId}`);
+  console.log(`Adding trip ${tripName} for user ${req.userId}`);
   pool
     .query(
       `WITH newTrip AS (
@@ -190,7 +187,7 @@ app.post("/api/trips", (req, res) => {
       INSERT INTO tripMembers (tripId, userId)
       SELECT tripId, $6 FROM newTrip
       RETURNING tripId`,
-      [tripName, startLocationId, endLocationId, startDateTime, endDateTime, currentUserId],
+      [tripName, startLocationId, endLocationId, startDateTime, endDateTime, req.userId],
     )
     .then((result) => getOneRow(result).tripid)
     .then((newTripId) => {
@@ -285,7 +282,7 @@ app.post("/api/trips/:tripId/notes", (req, res) => {
       `INSERT INTO tripNotes (tripId, userId, noteText) 
       VALUES ($1, $2, $3) 
       RETURNING noteId`,
-      [tripId, currentUserId, noteText],
+      [tripId, req.userId, noteText],
     )
     .then((result) => getOneRow(result).noteid)
     .then((createdNoteId) => {
@@ -309,7 +306,7 @@ app.delete("/api/trips/:tripId/notes/:noteId", (req, res) => {
     return res.status(400).json({ error: "Note id must be a whole number" });
   }
 
-  console.log(`User ${currentUserId} deleting note ${noteId} from trip ${tripId}`);
+  console.log(`User ${req.userId} deleting note ${noteId} from trip ${tripId}`);
   pool
     .query(`SELECT userId FROM tripNotes WHERE noteId = $1 AND tripId = $2`, [noteId, tripId])
     .then((result) => getOneRow(result))
@@ -319,8 +316,8 @@ app.delete("/api/trips/:tripId/notes/:noteId", (req, res) => {
         return res.status(404).json({ error: "Note not found" });
       }
       // Postgres sends BIGINT ids back as strings, so compare as numbers
-      if (Number(note.userid) !== currentUserId) {
-        console.log(`User ${currentUserId} tried to delete someone else's note ${noteId}`);
+      if (Number(note.userid) !== req.userId) {
+        console.log(`User ${req.userId} tried to delete someone else's note ${noteId}`);
         return res.status(403).json({ error: "You can only delete your own notes" });
       }
       return pool.query(`DELETE FROM tripNotes WHERE noteId = $1`, [noteId]).then(() => {
@@ -341,7 +338,7 @@ app.delete("/api/trips/:tripId/members/:userId", [requireCreator, checkUserId], 
   let userId = req.params.userId;
 
   // Check the creater isnt removing themselves
-  if (Number(userId) === currentUserId) {
+  if (Number(userId) === req.userId) {
     console.log(`Creator tried to remove themselves from trip ${tripId}`);
     return res.status(400).json({ error: "The creator can't be removed" });
   }

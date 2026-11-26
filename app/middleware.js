@@ -1,6 +1,38 @@
-// Takes the Postgres object AND the currentUser to return validation functions to use as middleware,
+// Takes the Postgres object to return validation functions to use as middleware,
 // reducing the redundant checking.
-module.exports = (pool, currentUserId) => {
+module.exports = (pool) => {
+  const SESSION_HOURS = 24;
+
+  // Required for every route.
+  function requireLogin(req, res, next) {
+    let token = req.cookies.token;
+    if (!token) {
+      console.log(`No login cookie for ${req.method} ${req.originalUrl}`);
+      return res.status(401).json({ error: "Please log in" });
+    }
+    // Tries to match the given cookie to ones saved in the sessions table, if it find one it sets the
+    // req.userId to the logged-in user.
+    pool
+      .query(
+        // Check if the session has expired
+        `SELECT userId FROM sessions
+        WHERE token = $1 AND createdAt > now() - ($2 * interval '1 hour')`,
+        [token, SESSION_HOURS],
+      )
+      .then((result) => {
+        if (result.rows.length === 0) {
+          console.log(`Unknown or expired login for ${req.method} ${req.originalUrl}`);
+          return res.status(401).json({ error: "Your login expired, please log in again" });
+        }
+        req.userId = Number(result.rows[0].userid);
+        next();
+      })
+      .catch((error) => {
+        console.log("The following error occured:", error);
+        res.status(500).send();
+      });
+  }
+
   // tripId in the URL must be a integar >= 0.
   function checkTripId(req, res, next) {
     let tripId = req.params.tripId;
@@ -30,7 +62,7 @@ module.exports = (pool, currentUserId) => {
       .query(
         `SELECT * FROM tripMembers 
         WHERE tripId = $1 AND userId = $2`,
-        [tripId, currentUserId],
+        [tripId, req.userId],
       )
       .then((result) => {
         if (result.rows.length > 0) {
@@ -53,7 +85,7 @@ module.exports = (pool, currentUserId) => {
       .query(
         `SELECT * FROM trips 
         WHERE tripId = $1 AND createdByUser = $2`,
-        [tripId, currentUserId],
+        [tripId, req.userId],
       )
       .then((result) => {
         if (result.rows.length > 0) {
@@ -69,5 +101,5 @@ module.exports = (pool, currentUserId) => {
       });
   }
 
-  return { checkTripId, checkUserId, requireMember, requireCreator };
+  return { requireLogin, checkTripId, checkUserId, requireMember, requireCreator };
 };
