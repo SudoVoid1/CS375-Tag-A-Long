@@ -3,7 +3,7 @@
 // and sends the user to the login page if they aren't logged in.
 
 function goToLogin() {
-  window.location.href = "/login.html";
+  window.location.href = "/login";
 }
 
 function logout() {

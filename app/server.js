@@ -375,4 +375,14 @@ app.get("/trips/:tripId", (req, res) => {
   res.sendFile(__dirname + "/public/trips/trip.html");
 });
 
+// Routing: send the user to login.html page.
+app.get("/login", (req, res) => {
+  res.sendFile(__dirname + "/public/userAuth/login.html");
+});
+
+// Routing: send the user to signup.html page.
+app.get("/signup", (req, res) => {
+  res.sendFile(__dirname + "/public/userAuth/signup.html");
+});
+
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
