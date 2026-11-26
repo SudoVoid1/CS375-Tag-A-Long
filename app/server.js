@@ -37,6 +37,10 @@ function getOneRow(result) {
   return result.rows[0];
 }
 
+app.get("/api/login", (req, res) => {});
+app.get("/api/signup", (req, res) => {});
+app.get("/api/userInfo", (req, res) => {});
+
 // API: Get ALL the trips the current user is a member of
 app.get("/api/trips", (req, res) => {
   console.log(`Getting trips for user ${req.userId}`);
