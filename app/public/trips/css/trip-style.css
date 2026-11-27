@@ -11,3 +11,13 @@
 #notes-list .note p {
   white-space: pre-wrap;
 }
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end; 
+  gap: 0 1rem;
+}
+.form-row .field label {
+  display: block;
+}

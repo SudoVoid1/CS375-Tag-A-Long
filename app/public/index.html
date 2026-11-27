@@ -4,15 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tag-A-Long-Homepage-Getting-Started</title>
-    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/css/water.css" />
+    <link rel="stylesheet" href="/css/global.css" />
+    <link rel="stylesheet" href="/css/navigation.css" />
+    <link rel="stylesheet" href="/css/accountOptions.css" />
+    <!-- Styles only the home page uses -->
+    <style>
+      /* The big centered "Tag-A-Long!" block */
+      .hero {
+        text-align: center;
+        padding: 3rem 1rem;
+      }
+
+      /* The bigger "Get Started" button */
+      .btn-large {
+        padding: 14px 40px;
+        font-size: 1.1rem;
+      }
+    </style>
   </head>
   <body>
-    <header class="navbar">
-      <a class="brand" href="/">Getting Started</a>
-      <nav>
-        <a href="/">Home</a>
+    <header class="site-header">
+      <nav id="site-nav"></nav>
+      <div id="account-options" data-login-optional>
         <a href="/login" class="btn">Login</a>
-      </nav>
+      </div>
     </header>
 
     <main class="hero">
@@ -24,5 +40,8 @@
     <footer>
       <p>&copy; CS 375 - Lucas Kemmer, Seunghyeon Kim, Juliette Palasol</p>
     </footer>
+
+    <script src="/js/navigation.js"></script>
+    <script src="/js/accountOptions.js"></script>
   </body>
 </html>

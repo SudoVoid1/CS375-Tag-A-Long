@@ -1,0 +1,23 @@
+/* Styling for the row of links */
+#site-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Styling for each link */
+#site-nav a {
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  color: var(--text-main, #222);
+  text-decoration: none;
+}
+#site-nav a:hover {
+  background: var(--background, #f2f2f2);
+}
+
+/* The page you're on */
+#site-nav a.active {
+  background: var(--background, #f2f2f2);
+  font-weight: 600;
+}
