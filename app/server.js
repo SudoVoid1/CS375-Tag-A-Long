@@ -4,6 +4,7 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+//Postgres Utilities
 const env = require("../env.json");
 const Pool = pg.Pool;
 const pool = new Pool(env);
@@ -11,23 +12,26 @@ pool.connect().then(function () {
   console.log(`Connected to database ${env.database}`);
 });
 
+//Login/Hasing Utilities
+const argon2 = require("argon2");
+const cookieParser = require("cookie-parser");
+const crypto = require("crypto");
+const SESSION_MS = 24 * 60 * 60 * 1000;
+let cookieOptions = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "strict",
+  maxAge: SESSION_MS,
+};
+
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.static("public"));
 app.use(express.static("trips"));
 app.use("/css", express.static("../node_modules/water.css/out"));
 
-// Placeholder for the logged-in user until login exists.
-const currentUserId = 1;
-
-const { checkTripId, checkUserId, requireMember, requireCreator } = require("./middleware")(
-  pool,
-  currentUserId,
-);
-
-/* Applies the middleware on every trip/* request.
- * First checks if a tripId is even valid, then if the current user is the owner/member of the requested trip (if not then they are blocked).
- */
-app.use("/api/trips/:tripId", checkTripId, requireMember);
+const { requireLogin, checkTripId, checkUserId, requireMember, requireCreator } =
+  require("./middleware")(pool);
 
 /*
  * pool.query returns a object with potentially multiple rows (even if querying one thing),
@@ -40,9 +44,197 @@ function getOneRow(result) {
   return result.rows[0];
 }
 
+function makeToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+function getLoginError(body) {
+  let { username, password } = body;
+  if (typeof username !== "string" || username.length < 1 || username.length > 50) {
+    return "Please enter a username (up to 50 characters)";
+  }
+  if (typeof password !== "string" || password.length < 1 || password.length > 200) {
+    return "Please enter a password (up to 200 characters)";
+  }
+  return null;
+}
+
+function getSignupError(body) {
+  let { username, email, password } = body;
+  if (typeof username !== "string" || !/^\w{3,50}$/.test(username)) {
+    return "Username must be 3-50 letters, numbers or underscores";
+  }
+  if (typeof email !== "string" || !/^\S+@\S+$/.test(email) || email.length > 255) {
+    return "Please enter a valid email";
+  }
+  if (typeof password !== "string" || password.length < 8 || password.length > 200) {
+    return "Password must be 8-200 characters";
+  }
+  return null;
+}
+
+/*
+ * Saves a new session for the user and token.
+ */
+async function startSession(userId) {
+  let token = makeToken();
+  await pool.query(`INSERT INTO sessions (token, userId) VALUES ($1, $2)`, [token, userId]);
+  console.log(`Started a new session for user ${userId}`);
+  return token;
+}
+
+// API: Signup for a new account, then log the new user in
+app.post("/api/signup", async (req, res) => {
+  let body = req.body || {};
+  let signupError = getSignupError(body);
+  if (signupError) {
+    console.log(`Invalid signup: ${signupError}`);
+    return res.status(400).json({ error: signupError });
+  }
+  let { username, email, password } = body;
+
+  // Check the username and email aren't already used.
+  let result;
+  let existingUser;
+  try {
+    result = await pool.query(
+      `SELECT userId FROM users WHERE username = $1 OR email = $2 LIMIT 1`,
+      [username, email],
+    );
+    existingUser = getOneRow(result);
+  } catch (error) {
+    console.log("The following error occured:", error);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+  if (existingUser) {
+    console.log(`Username ${username} or email ${email} is already taken`);
+    return res.status(409).json({ error: "That username or email is already taken" });
+  }
+
+  // Only the hash is stored, never the password itself
+  let passwordHash;
+  try {
+    passwordHash = await argon2.hash(password);
+  } catch (error) {
+    console.log("The following error occured:", error);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+
+  let newUserId;
+  try {
+    result = await pool.query(
+      `INSERT INTO users (username, email, passwordHash) VALUES ($1, $2, $3)
+       RETURNING userId`,
+      [username, email, passwordHash],
+    );
+    newUserId = getOneRow(result).userid;
+  } catch (error) {
+    console.log("The following error occured:", error);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+  console.log(`Created user ${username} with id ${newUserId}`);
+
+  let token;
+  try {
+    token = await startSession(newUserId);
+  } catch (error) {
+    console.log("The following error occured:", error);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+  return res.status(201).cookie("token", token, cookieOptions).json({ username });
+});
+
+// API: Login to an existing account
+app.post("/api/login", async (req, res) => {
+  let body = req.body || {};
+  let loginError = getLoginError(body);
+  if (loginError) {
+    console.log(`Invalid login: ${loginError}`);
+    return res.status(400).json({ error: loginError });
+  }
+  let { username, password } = body;
+  console.log(`Login attempt for ${username}`);
+
+  // Get the stored password hash
+  let user;
+  try {
+    let result = await pool.query(`SELECT userId, passwordHash FROM users WHERE username = $1`, [
+      username,
+    ]);
+    user = getOneRow(result);
+  } catch (error) {
+    console.log("The following error occured:", error);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+
+  if (!user) {
+    console.log(`No user named ${username}`);
+    return res.status(401).json({ error: "Wrong username or password" });
+  }
+
+  try {
+    if (!(await argon2.verify(user.passwordhash, password))) {
+      console.log(`Wrong password for ${username}`);
+      return res.status(401).json({ error: "Wrong username or password" });
+    }
+  } catch (error) {
+    console.log("The following error occured:", error);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+
+  let token;
+  try {
+    token = await startSession(user.userid);
+  } catch (error) {
+    console.log("The following error occured:", error);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+  console.log(`${username} logged in`);
+  return res.cookie("token", token, cookieOptions).json({ username });
+});
+
+// API: Logs out and deletes the session and cookie.
+app.post("/api/logout", (req, res) => {
+  let { token } = req.cookies;
+  pool
+    .query(`DELETE FROM sessions WHERE token = $1 RETURNING userId`, [token || ""])
+    .then((result) => getOneRow(result))
+    .then((session) => {
+      if (session) {
+        console.log(`User ${session.userid} logged out`);
+      } else {
+        console.log("Logout with no active session");
+      }
+      res.clearCookie("token", cookieOptions).json({ message: "Success" });
+    })
+    .catch((error) => {
+      console.log("The following error occured:", error);
+      res.status(500).json({ error: "Something went wrong" });
+    });
+});
+
+// Every /api route below this requires a logged in user.
+app.use("/api", requireLogin);
+
+/* Applies the middleware on every trip/* request.
+ * First checks if a tripId is even valid, then if the current user is the owner/member of the requested trip (if not then they are blocked).
+ */
+app.use("/api/trips/:tripId", checkTripId, requireMember);
+
+// API: User name for the logged in user
+app.get("/api/userInfo", (req, res) => {
+  pool
+    .query(`SELECT userId, username FROM users WHERE userId = $1`, [req.userId])
+    .then((result) => res.json(getOneRow(result)))
+    .catch((error) => {
+      console.log("The following error occured:", error);
+      res.status(500).json({ error: "Something went wrong" });
+    });
+});
+
 // API: Get ALL the trips the current user is a member of
 app.get("/api/trips", (req, res) => {
-  console.log(`Getting trips for user ${currentUserId}`);
+  console.log(`Getting trips for user ${req.userId}`);
   pool
     .query(
       `SELECT trips.*, s.locationName AS startLocation, e.locationName AS endLocation
@@ -52,10 +244,10 @@ app.get("/api/trips", (req, res) => {
        JOIN locations e ON e.locationId = trips.endLocationId
        WHERE tripMembers.userId = $1
        ORDER BY trips.startDateTime`,
-      [currentUserId],
+      [req.userId],
     )
     .then((result) => {
-      console.log(`Found ${result.rows.length} trips for user ${currentUserId}:`, result.rows);
+      console.log(`Found ${result.rows.length} trips for user ${req.userId}:`, result.rows);
       res.json(result.rows);
     })
     .catch((error) => {
@@ -77,7 +269,7 @@ app.get("/api/trips/:tripId", (req, res) => {
        JOIN locations s ON s.locationId = trips.startLocationId
        JOIN locations e ON e.locationId = trips.endLocationId
        WHERE tripId = $1`,
-      [tripId, currentUserId],
+      [tripId, req.userId],
     )
     .then((result) => getOneRow(result))
     .then((trip) => {
@@ -164,7 +356,7 @@ app.get("/api/trips/:tripId/notes", (req, res) => {
        FROM tripNotes NATURAL JOIN users
        WHERE tripId = $1
        ORDER BY tripNotes.createdAt DESC`,
-      [tripId, currentUserId],
+      [tripId, req.userId],
     )
     .then((result) => {
       console.log(`Found ${result.rows.length} notes for trip ${tripId}:`, result.rows);
@@ -179,7 +371,7 @@ app.get("/api/trips/:tripId/notes", (req, res) => {
 // API: Add a trip
 app.post("/api/trips", (req, res) => {
   let { tripName, startLocationId, endLocationId, startDateTime, endDateTime } = req.body;
-  console.log(`Adding trip ${tripName} for user ${currentUserId}`);
+  console.log(`Adding trip ${tripName} for user ${req.userId}`);
   pool
     .query(
       `WITH newTrip AS (
@@ -190,7 +382,7 @@ app.post("/api/trips", (req, res) => {
       INSERT INTO tripMembers (tripId, userId)
       SELECT tripId, $6 FROM newTrip
       RETURNING tripId`,
-      [tripName, startLocationId, endLocationId, startDateTime, endDateTime, currentUserId],
+      [tripName, startLocationId, endLocationId, startDateTime, endDateTime, req.userId],
     )
     .then((result) => getOneRow(result).tripid)
     .then((newTripId) => {
@@ -285,7 +477,7 @@ app.post("/api/trips/:tripId/notes", (req, res) => {
       `INSERT INTO tripNotes (tripId, userId, noteText) 
       VALUES ($1, $2, $3) 
       RETURNING noteId`,
-      [tripId, currentUserId, noteText],
+      [tripId, req.userId, noteText],
     )
     .then((result) => getOneRow(result).noteid)
     .then((createdNoteId) => {
@@ -309,7 +501,7 @@ app.delete("/api/trips/:tripId/notes/:noteId", (req, res) => {
     return res.status(400).json({ error: "Note id must be a whole number" });
   }
 
-  console.log(`User ${currentUserId} deleting note ${noteId} from trip ${tripId}`);
+  console.log(`User ${req.userId} deleting note ${noteId} from trip ${tripId}`);
   pool
     .query(`SELECT userId FROM tripNotes WHERE noteId = $1 AND tripId = $2`, [noteId, tripId])
     .then((result) => getOneRow(result))
@@ -319,8 +511,8 @@ app.delete("/api/trips/:tripId/notes/:noteId", (req, res) => {
         return res.status(404).json({ error: "Note not found" });
       }
       // Postgres sends BIGINT ids back as strings, so compare as numbers
-      if (Number(note.userid) !== currentUserId) {
-        console.log(`User ${currentUserId} tried to delete someone else's note ${noteId}`);
+      if (Number(note.userid) !== req.userId) {
+        console.log(`User ${req.userId} tried to delete someone else's note ${noteId}`);
         return res.status(403).json({ error: "You can only delete your own notes" });
       }
       return pool.query(`DELETE FROM tripNotes WHERE noteId = $1`, [noteId]).then(() => {
@@ -341,7 +533,7 @@ app.delete("/api/trips/:tripId/members/:userId", [requireCreator, checkUserId], 
   let userId = req.params.userId;
 
   // Check the creater isnt removing themselves
-  if (Number(userId) === currentUserId) {
+  if (Number(userId) === req.userId) {
     console.log(`Creator tried to remove themselves from trip ${tripId}`);
     return res.status(400).json({ error: "The creator can't be removed" });
   }
@@ -372,6 +564,16 @@ app.delete("/api/trips/:tripId/members/:userId", [requireCreator, checkUserId], 
 // Routing: send the user to trip.html page.
 app.get("/trips/:tripId", (req, res) => {
   res.sendFile(__dirname + "/public/trips/trip.html");
+});
+
+// Routing: send the user to login.html page.
+app.get("/login", (req, res) => {
+  res.sendFile(__dirname + "/public/userAuth/login.html");
+});
+
+// Routing: send the user to signup.html page.
+app.get("/signup", (req, res) => {
+  res.sendFile(__dirname + "/public/userAuth/signup.html");
 });
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

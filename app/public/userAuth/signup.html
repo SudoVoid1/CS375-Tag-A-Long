@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up | Tag-A-Long</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="navbar">
+      <a class="brand" href="/">Tag-A-Long</a>
+      <nav>
+        <a href="/">Home</a>
+      </nav>
+    </header>
+
+    <main class="auth-wrapper">
+      <form id="signup-form" class="card" novalidate>
+        <h1>Sign Up</h1>
+
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" autocomplete="username" required />
+
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" autocomplete="email" required />
+
+        <label for="password">Password (at least 8 characters)</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          autocomplete="new-password"
+          required
+        />
+
+        <label for="confirm-password">Confirm password</label>
+        <input
+          type="password"
+          id="confirm-password"
+          name="confirmPassword"
+          autocomplete="new-password"
+          required
+        />
+
+        <p id="signup-error" class="error" role="alert"></p>
+
+        <button type="submit" class="btn btn-full">Create account</button>
+        <p class="small">Already have an account? <a href="/login">Log in</a></p>
+      </form>
+    </main>
+
+    <script src="/userAuth/js/signup.js"></script>
+  </body>
+</html>

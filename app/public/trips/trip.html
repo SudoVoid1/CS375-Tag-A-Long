@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/trips/trip-style.css" />
   </head>
   <body>
+    <p><span id="current-user"></span> <button id="logout-button">Log out</button></p>
     <a href="/trips/">← Back to my trips</a>
     <h1 id="name">Trip</h1>
     <p id="subtitle"></p>
@@ -166,6 +167,7 @@
     </main>
 
     <!-- trip.js calls everything above it -->
+    <script src="/js/accountOptions.js"></script>
     <script src="/trips/js/helpers.js"></script>
     <script src="/trips/js/notes.js"></script>
     <script src="/trips/js/members.js"></script>
