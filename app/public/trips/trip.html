@@ -43,17 +43,21 @@
 
         <h2>How are you getting there?</h2>
         <p id="travel-route"></p>
-        <label for="travel-mode">Mode of Transportation</label>
-        <select id="travel-mode">
-          <option value="train">Train</option>
-          <option value="plane">Plane</option>
-          <option value="driving">Driving</option>
-          <option value="bus">Bus</option>
-          <option value="bus">Walking</option>
-          <option value="bus">Biking</option>
-          <option value="bus">Other</option>
-        </select>
-        <button id="search-travel-button">Search</button>
+        <div class="form-row">
+          <div class="field">
+            <label for="travel-mode">Mode of Transportation</label>
+            <select id="travel-mode">
+              <option value="train">Train</option>
+              <option value="plane">Plane</option>
+              <option value="driving">Driving</option>
+              <option value="bus">Bus</option>
+              <option value="bus">Walking</option>
+              <option value="bus">Biking</option>
+              <option value="bus">Other</option>
+            </select>
+          </div>
+          <button id="search-travel-button">Search</button>
+        </div>
         <table id="travel-options" hidden>
           <thead>
             <tr>
@@ -76,9 +80,13 @@
         <p>Planned spending (travel + activities): <strong id="total-spent">$0.00</strong></p>
         <p>Remaining: <strong id="remaining">$0.00</strong></p>
 
-        <label for="my-budget">Your budget ($)</label>
-        <input id="my-budget" type="number" min="0" step="0.01" />
-        <button id="save-budget-button">Save</button>
+        <div class="form-row">
+          <div class="field">
+            <label for="my-budget">Your budget ($)</label>
+            <input id="my-budget" type="number" min="0" step="0.01" />
+          </div>
+          <button id="save-budget-button">Save</button>
+        </div>
         <p id="budget-message"></p>
 
         <table>
@@ -111,28 +119,37 @@
         <p id="no-activities" hidden>No activities yet.</p>
 
         <h2>Add an activity</h2>
-        <label for="activity-name">Activity</label>
-        <input id="activity-name" />
-
-        <label for="activity-category">Category</label>
-        <input id="activity-category" />
-
-        <label for="activity-location">Location</label>
-        <select id="activity-location"></select>
-
-        <label for="activity-date">Date</label>
-        <input id="activity-date" type="date" />
-
-        <label for="activity-time">Time</label>
-        <input id="activity-time" type="time" />
-
-        <label for="activity-duration">Duration (minutes)</label>
-        <input id="activity-duration" type="number" min="1" value="30" />
-
-        <label for="activity-cost">Cost ($)</label>
-        <input id="activity-cost" type="number" min="0" step="0.01" value="0" />
-
-        <button id="add-activity-button">Add activity</button>
+        <div class="form-row">
+          <div class="field">
+            <label for="activity-name">Activity</label>
+            <input id="activity-name" />
+          </div>
+          <div class="field">
+            <label for="activity-category">Category</label>
+            <input id="activity-category" />
+          </div>
+          <div class="field">
+            <label for="activity-location">Location</label>
+            <select id="activity-location"></select>
+          </div>
+          <div class="field">
+            <label for="activity-date">Date</label>
+            <input id="activity-date" type="date" />
+          </div>
+          <div class="field">
+            <label for="activity-time">Time</label>
+            <input id="activity-time" type="time" />
+          </div>
+          <div class="field">
+            <label for="activity-duration">Duration (minutes)</label>
+            <input id="activity-duration" type="number" min="1" value="30" />
+          </div>
+          <div class="field">
+            <label for="activity-cost">Cost ($)</label>
+            <input id="activity-cost" type="number" min="0" step="0.01" value="0" />
+          </div>
+          <button id="add-activity-button">Add activity</button>
+        </div>
         <p id="activity-message"></p>
       </section>
 
@@ -161,9 +178,13 @@
         <!-- Only allow the owner to add/remove users -->
         <div id="add-member-card" hidden>
           <h2>Add a member</h2>
-          <label for="member-username">Username</label>
-          <input id="member-username" />
-          <button id="add-member-button">Add member</button>
+          <div class="form-row">
+            <div class="field">
+              <label for="member-username">Username</label>
+              <input id="member-username" />
+            </div>
+            <button id="add-member-button">Add member</button>
+          </div>
           <p id="member-message"></p>
         </div>
       </section>
