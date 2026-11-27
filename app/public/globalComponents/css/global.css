@@ -1,0 +1,51 @@
+/* Shared by every page. You should load css in the following order.
+     1. /css/water.css  
+     2. /css/global.css 
+     3. Some specific stylesheet (ex. /userAuth/css/auth.css, /trips/css/trip-style.css)
+     4. /css/accountOptions.css
+     */
+
+body {
+  box-sizing: border-box; /* count the padding inside the 1200px */
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+/* Top bar: logo on the left, links on the right */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.navbar nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+footer {
+  text-align: center;
+}
+
+/* A link that looks like a water.css button, e.g. <a href="/login" class="btn">Login</a> */
+.btn {
+  display: inline-block;
+  padding: 10px 30px;
+  border-radius: 6px;
+  background: var(--button-base);
+  color: var(--form-text);
+  text-decoration: none;
+}
+.btn:hover {
+  background: var(--button-hover);
+  text-decoration: none;
+}
+
+/* Smaller, quieter text, e.g. "Don't have an account? Sign up" */
+.small {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}

@@ -1,0 +1,31 @@
+/* Centers the form on the page */
+.auth-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+/* The form box */
+.card {
+  width: 100%;
+  max-width: 380px;
+}
+
+/* Each label above its input, and inputs as wide as the box */
+.card label,
+.card input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box; 
+}
+
+/* The full-width "Log In" / "Create account" button */
+.btn-full {
+  width: 100%;
+  margin-right: 0;
+}
+
+/* Error message under the form, e.g. "Wrong username or password" */
+.error {
+  color: #e5484d;
+}

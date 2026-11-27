@@ -29,6 +29,8 @@ app.use(cookieParser());
 app.use(express.static("public"));
 app.use(express.static("trips"));
 app.use("/css", express.static("../node_modules/water.css/out"));
+app.use("/css", express.static("public/globalComponents/css"));
+app.use("/js", express.static("public/globalComponents/js"));
 
 const { requireLogin, checkTripId, checkUserId, requireMember, requireCreator } =
   require("./middleware")(pool);
