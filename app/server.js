@@ -16,6 +16,13 @@ pool.connect().then(function () {
 const argon2 = require("argon2");
 const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
+const SESSION_MS = 24 * 60 * 60 * 1000;
+let cookieOptions = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "strict",
+  maxAge: SESSION_MS,
+};
 
 app.use(express.json());
 app.use(cookieParser());
@@ -37,9 +44,193 @@ function getOneRow(result) {
   return result.rows[0];
 }
 
-app.get("/api/login", (req, res) => {});
-app.get("/api/signup", (req, res) => {});
-app.get("/api/userInfo", (req, res) => {});
+function makeToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+function getLoginError(body) {
+  let { username, password } = body;
+  if (typeof username !== "string" || username.length < 1 || username.length > 50) {
+    return "Please enter a username (up to 50 characters)";
+  }
+  if (typeof password !== "string" || password.length < 1 || password.length > 200) {
+    return "Please enter a password (up to 200 characters)";
+  }
+  return null;
+}
+
+function getSignupError(body) {
+  let { username, email, password } = body;
+  if (typeof username !== "string" || !/^\w{3,50}$/.test(username)) {
+    return "Username must be 3-50 letters, numbers or underscores";
+  }
+  if (typeof email !== "string" || !/^\S+@\S+$/.test(email) || email.length > 255) {
+    return "Please enter a valid email";
+  }
+  if (typeof password !== "string" || password.length < 8 || password.length > 200) {
+    return "Password must be 8-200 characters";
+  }
+  return null;
+}
+
+/*
+ * Saves a new session for the user and token.
+ */
+async function startSession(userId) {
+  let token = makeToken();
+  await pool.query(`INSERT INTO sessions (token, userId) VALUES ($1, $2)`, [token, userId]);
+  console.log(`Started a new session for user ${userId}`);
+  return token;
+}
+
+// API: Signup for a new account, then log the new user in
+app.post("/api/signup", async (req, res) => {
+  let body = req.body || {};
+  let signupError = getSignupError(body);
+  if (signupError) {
+    console.log(`Invalid signup: ${signupError}`);
+    return res.status(400).json({ error: signupError });
+  }
+  let { username, email, password } = body;
+
+  // Check the username and email aren't already used.
+  let result;
+  let existingUser;
+  try {
+    result = await pool.query(
+      `SELECT userId FROM users WHERE username = $1 OR email = $2 LIMIT 1`,
+      [username, email],
+    );
+    existingUser = getOneRow(result);
+  } catch (error) {
+    console.log("The following error occured:", error);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+  if (existingUser) {
+    console.log(`Username ${username} or email ${email} is already taken`);
+    return res.status(409).json({ error: "That username or email is already taken" });
+  }
+
+  // Only the hash is stored, never the password itself
+  let passwordHash;
+  try {
+    passwordHash = await argon2.hash(password);
+  } catch (error) {
+    console.log("The following error occured:", error);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+
+  let newUserId;
+  try {
+    result = await pool.query(
+      `INSERT INTO users (username, email, passwordHash) VALUES ($1, $2, $3)
+       RETURNING userId`,
+      [username, email, passwordHash],
+    );
+    newUserId = getOneRow(result).userid;
+  } catch (error) {
+    console.log("The following error occured:", error);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+  console.log(`Created user ${username} with id ${newUserId}`);
+
+  let token;
+  try {
+    token = await startSession(newUserId);
+  } catch (error) {
+    console.log("The following error occured:", error);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+  return res.status(201).cookie("token", token, cookieOptions).json({ username });
+});
+
+// API: Login to an existing account
+app.post("/api/login", async (req, res) => {
+  let body = req.body || {};
+  let loginError = getLoginError(body);
+  if (loginError) {
+    console.log(`Invalid login: ${loginError}`);
+    return res.status(400).json({ error: loginError });
+  }
+  let { username, password } = body;
+  console.log(`Login attempt for ${username}`);
+
+  // Get the stored password hash
+  let user;
+  try {
+    let result = await pool.query(`SELECT userId, passwordHash FROM users WHERE username = $1`, [
+      username,
+    ]);
+    user = getOneRow(result);
+  } catch (error) {
+    console.log("The following error occured:", error);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+
+  if (!user) {
+    console.log(`No user named ${username}`);
+    return res.status(401).json({ error: "Wrong username or password" });
+  }
+
+  try {
+    if (!(await argon2.verify(user.passwordhash, password))) {
+      console.log(`Wrong password for ${username}`);
+      return res.status(401).json({ error: "Wrong username or password" });
+    }
+  } catch (error) {
+    console.log("The following error occured:", error);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+
+  let token;
+  try {
+    token = await startSession(user.userid);
+  } catch (error) {
+    console.log("The following error occured:", error);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+  console.log(`${username} logged in`);
+  return res.cookie("token", token, cookieOptions).json({ username });
+});
+
+// API: Logs out and deletes the session and cookie.
+app.post("/api/logout", (req, res) => {
+  let { token } = req.cookies;
+  pool
+    .query(`DELETE FROM sessions WHERE token = $1 RETURNING userId`, [token || ""])
+    .then((result) => getOneRow(result))
+    .then((session) => {
+      if (session) {
+        console.log(`User ${session.userid} logged out`);
+      } else {
+        console.log("Logout with no active session");
+      }
+      res.clearCookie("token", cookieOptions).json({ message: "Success" });
+    })
+    .catch((error) => {
+      console.log("The following error occured:", error);
+      res.status(500).json({ error: "Something went wrong" });
+    });
+});
+
+// Every /api route below this requires a logged in user.
+app.use("/api", requireLogin);
+
+/* Applies the middleware on every trip/* request.
+ * First checks if a tripId is even valid, then if the current user is the owner/member of the requested trip (if not then they are blocked).
+ */
+app.use("/api/trips/:tripId", checkTripId, requireMember);
+
+// API: User name for the logged in user
+app.get("/api/userInfo", (req, res) => {
+  pool
+    .query(`SELECT userId, username FROM users WHERE userId = $1`, [req.userId])
+    .then((result) => res.json(getOneRow(result)))
+    .catch((error) => {
+      console.log("The following error occured:", error);
+      res.status(500).json({ error: "Something went wrong" });
+    });
+});
 
 // API: Get ALL the trips the current user is a member of
 app.get("/api/trips", (req, res) => {

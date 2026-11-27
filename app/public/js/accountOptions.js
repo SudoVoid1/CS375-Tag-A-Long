@@ -13,7 +13,7 @@ function logout() {
 }
 
 function showCurrentUser() {
-  fetch("/api/me")
+  fetch("/api/userInfo")
     .then((response) => {
       // 401 = no login cookie, or it expired
       if (response.status === 401) {
