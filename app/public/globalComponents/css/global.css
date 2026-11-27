@@ -3,6 +3,7 @@
      2. /css/global.css 
      3. Some specific stylesheet (ex. /userAuth/css/auth.css, /trips/css/trip-style.css)
      4. /css/accountOptions.css
+     5. /css/navigation.css 
      */
 
 body {
@@ -14,16 +15,13 @@ body {
   padding-right: 2rem;
 }
 
-/* Top bar: logo on the left, links on the right */
-.navbar {
+/* Top bar on every page. Holds the nav and account options*/
+.site-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-.navbar nav {
-  display: flex;
-  align-items: center;
   gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 footer {

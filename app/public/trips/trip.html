@@ -7,10 +7,14 @@
     <link rel="stylesheet" href="/css/water.css" />
     <link rel="stylesheet" href="/css/global.css" />
     <link rel="stylesheet" href="/trips/css/trip-style.css" />
+    <link rel="stylesheet" href="/css/navigation.css" />
     <link rel="stylesheet" href="/css/accountOptions.css" />
   </head>
   <body>
-    <div id="account-options"></div>
+    <header class="site-header">
+      <nav id="site-nav"></nav>
+      <div id="account-options"></div>
+    </header>
     <a href="/trips/">← Back to my trips</a>
     <h1 id="name">Trip</h1>
     <p id="subtitle"></p>
@@ -191,6 +195,7 @@
     </main>
 
     <!-- trip.js calls everything above it -->
+    <script src="/js/navigation.js"></script>
     <script src="/js/accountOptions.js"></script>
     <script src="/trips/js/helpers.js"></script>
     <script src="/trips/js/notes.js"></script>
