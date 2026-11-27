@@ -1,0 +1,59 @@
+
+/* The account options container */
+#account-options {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* The account menu container */
+.account-menu {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  overflow: visible;
+}
+
+/* The username button */
+.account-menu summary {
+  list-style: none; 
+  margin: 0;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.account-menu summary::after {
+  content: " ▾";
+}
+
+/* The dropdown container itself */
+.account-dropdown {
+  position: absolute;
+  right: 0;
+  margin-top: 0.3rem;
+  min-width: 10rem;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 8px;
+  background: var(--background-body, #fff);
+}
+
+/* Items in the dropdown (profile, settings and Log out)  */
+.account-dropdown a,
+.account-dropdown button {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+
+.account-dropdown .logout {
+  color: #e5484d;
+}
